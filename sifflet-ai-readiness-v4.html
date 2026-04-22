@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Readiness Score — Sifflet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --razz: #D4143E;
+    --razz-hover: #b80f34;
+    --dark: #1D2028;
+    --grey-bg: #F5F6F8;
+    --grey-border: #E2E6EC;
+    --grey-text: #6B7A99;
+    --grey-light: #F0F2F5;
+    --white: #FFFFFF;
+    --green: #12B76A;
+    --orange: #F79009;
+    --red: #F04438;
+    --shadow-card: 0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-hover: 0 8px 28px rgba(0,0,0,0.1);
+    --radius: 14px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Inter", -apple-system, sans-serif;
+    background: var(--grey-bg);
+    color: var(--dark);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NAV */
+  .topnav {
+    background: var(--white);
+    border-bottom: 1px solid var(--grey-border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .nav-logo svg { height: 34px; width: auto; display: block; }
+
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+
+  .nav-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--grey-text);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .nav-link:hover { color: var(--dark); }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    background: var(--razz);
+    text-decoration: none;
+    padding: 8px 18px;
+    border-radius: 7px;
+    transition: all 0.15s;
+  }
+  .nav-cta:hover { background: var(--razz-hover); }
+
+  /* PAGE */
+  .page { max-width: 780px; margin: 0 auto; padding: 52px 20px 90px; }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--razz);
+    background: rgba(212,20,62,0.07);
+    padding: 5px 13px;
+    border-radius: 99px;
+    margin-bottom: 22px;
+  }
+
+  .badge-dot { width: 7px; height: 7px; background: var(--razz); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .hero h1 {
+    font-size: clamp(24px, 3.8vw, 36px);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--dark);
+    margin-bottom: 14px;
+  }
+
+  .hero p {
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--grey-text);
+    max-width: 520px;
+    margin: 0 auto 26px;
+  }
+
+  .trust-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--grey-text);
+  }
+
+  .check-icon { color: var(--green); flex-shrink: 0; }
+
+  /* MAIN CARD */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--grey-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.1s ease forwards;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    padding: 18px 28px 16px;
+    border-bottom: 1px solid var(--grey-border);
+  }
+
+  .prog-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 9px;
+  }
+
+  .prog-label { font-size: 13px; font-weight: 600; color: var(--dark); }
+  .prog-pct { font-size: 12px; font-weight: 500; color: var(--grey-text); }
+
+  .prog-track {
+    height: 4px;
+    background: var(--grey-border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .prog-fill {
+    height: 100%;
+    background: var(--razz);
+    border-radius: 99px;
+    transition: width 0.45s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  /* QUESTION BODY */
+  .q-body { padding: 28px; }
+
+  .q-cat {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--grey-text);
+    background: var(--grey-light);
+    padding: 4px 10px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+  }
+
+  .q-text {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    color: var(--dark);
+    margin-bottom: 24px;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 8px; }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 1.5px solid var(--grey-border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--white);
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .option:hover { border-color: rgba(212,20,62,0.45); background: rgba(212,20,62,0.02); }
+
+  .option.selected {
+    border-color: var(--razz);
+    background: rgba(212,20,62,0.03);
+  }
+
+  .opt-radio {
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    border: 2px solid var(--grey-border);
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  .option.selected .opt-radio {
+    border-color: var(--razz);
+    background: var(--razz);
+  }
+
+  .option.selected .opt-radio::after {
+    content: "";
+    width: 5px; height: 5px;
+    background: white;
+    border-radius: 50%;
+  }
+
+  .opt-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+  }
+
+  .option.selected .opt-text { color: var(--dark); font-weight: 500; }
+
+  /* RESOURCE STRIP */
+  .resource-strip {
+    margin: 20px 28px 0;
+    padding: 14px 16px;
+    background: var(--grey-bg);
+    border: 1px solid var(--grey-border);
+    border-radius: 9px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .resource-icon {
+    width: 32px; height: 32px;
+    border-radius: 7px;
+    background: rgba(212,20,62,0.08);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .resource-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--grey-text);
+    margin-bottom: 3px;
+  }
+
+  .resource-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    text-decoration: none;
+    line-height: 1.35;
+    transition: color 0.15s;
+  }
+
+  .resource-title:hover { color: var(--razz); }
+
+  .resource-desc {
+    font-size: 12px;
+    color: var(--grey-text);
+    line-height: 1.45;
+    margin-top: 2px;
+  }
+
+  .resource-arrow {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--razz);
+    text-decoration: none;
+    white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+  .resource-arrow:hover { opacity: 0.7; }
+
+  /* NAV BUTTONS */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 28px;
+    border-top: 1px solid var(--grey-border);
+    margin-top: 20px;
+  }
+
+  .btn-back {
+    font-size: 13.5px; font-weight: 500;
+    color: var(--grey-text);
+    background: none;
+    border: 1.5px solid var(--grey-border);
+    border-radius: 8px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn-back:hover { border-color: #c5ccd8; color: var(--dark); }
+
+  .btn-next {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 14px; font-weight: 600;
+    color: white;
+    background: var(--razz);
+    border: none; border-radius: 8px;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+    opacity: 0.3;
+    pointer-events: none;
+    font-family: inherit;
+  }
+  .btn-next.on { opacity: 1; pointer-events: all; }
+  .btn-next.on:hover { background: var(--razz-hover); box-shadow: 0 4px 14px rgba(212,20,62,0.28); transform: translateY(-1px); }
+
+  /* START SCREEN */
+  .start-body { padding: 36px 28px 28px; }
+  .start-body .q-text { font-size: 20px; margin-bottom: 12px; }
+  .start-desc { font-size: 14.5px; line-height: 1.65; color: var(--grey-text); margin-bottom: 0; }
+
+  .start-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 24px 0 0;
+  }
+
+  @media (max-width: 540px) { .start-features { grid-template-columns: 1fr; } }
+
+  .feat-item {
+    padding: 14px;
+    background: var(--grey-bg);
+    border-radius: 9px;
+    border: 1px solid var(--grey-border);
+  }
+
+  .feat-num {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.04em;
+    color: var(--razz); margin-bottom: 3px;
+  }
+
+  .feat-text { font-size: 12px; color: var(--grey-text); line-height: 1.4; }
+
+  /* PREVIEW */
+  #preview-screen { display: none; }
+  #preview-screen.on { display: block; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+
+  .preview-card {
+    background: var(--white);
+    border: 1px solid var(--grey-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .preview-top {
+    padding: 40px 28px 28px;
+    text-align: center;
+    border-bottom: 1px solid var(--grey-border);
+  }
+
+  .donut-wrap { position: relative; width: 148px; height: 148px; margin: 0 auto 18px; }
+  .donut-wrap svg { transform: rotate(-90deg); display: block; }
+  .donut-track { fill: none; stroke: var(--grey-border); stroke-width: 10; }
+  .donut-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1.4s cubic-bezier(0.3,0,0.2,1); }
+
+  .score-inner {
+    position: absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%); text-align: center;
+  }
+
+  .score-big { font-size: 38px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; display: block; }
+  .score-of { font-size: 12px; color: var(--grey-text); }
+
+  .level-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13.5px; font-weight: 600;
+    padding: 5px 14px; border-radius: 99px;
+    margin-bottom: 16px;
+  }
+  .pill-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .preview-headline { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--dark); margin-bottom: 8px; }
+  .preview-sub { font-size: 14px; line-height: 1.6; color: var(--grey-text); max-width: 480px; margin: 0 auto; }
+
+  /* BLURRED BREAKDOWN */
+  .breakdown-section {
+    padding: 24px 28px 0;
+    position: relative;
+    overflow: hidden;
+    min-height: 180px;
+    border-bottom: 1px solid var(--grey-border);
+  }
+
+  .breakdown-title {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--grey-text); margin-bottom: 16px;
+  }
+
+  .brow { display: flex; align-items: center; gap: 12px; margin-bottom: 11px; }
+  .brow-name { width: 185px; font-size: 13px; color: var(--dark); flex-shrink: 0; font-weight: 500; }
+  .brow-track { flex: 1; height: 6px; background: var(--grey-border); border-radius: 99px; overflow: hidden; }
+  .brow-fill { height: 100%; border-radius: 99px; width: 0; transition: width 1s ease; }
+  .brow-score { width: 32px; text-align: right; font-size: 12px; font-weight: 600; color: var(--grey-text); flex-shrink: 0; }
+
+  .blur-veil {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 130px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.98) 75%);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: 14px;
+  }
+
+  .lock-hint {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 500; color: var(--grey-text);
+  }
+
+  /* GATE SECTION */
+  .gate-section {
+    padding: 28px;
+    border-bottom: 1px solid var(--grey-border);
+  }
+
+  .gate-head { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 5px; color: var(--dark); }
+  .gate-sub { font-size: 13px; color: var(--grey-text); line-height: 1.55; margin-bottom: 22px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 11px; }
+  @media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .field label { display: block; font-size: 11.5px; font-weight: 600; color: var(--dark); margin-bottom: 5px; }
+
+  .field input {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid var(--grey-border);
+    border-radius: 7px;
+    font-size: 14px; font-family: inherit;
+    color: var(--dark); background: var(--white);
+    outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--razz); }
+  .field input::placeholder { color: #aab0bf; }
+
+  .btn-unlock {
+    width: 100%; margin-top: 14px;
+    padding: 13px; border: none; border-radius: 8px;
+    background: var(--razz); color: white;
+    font-size: 15px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-unlock:hover { background: var(--razz-hover); box-shadow: 0 4px 16px rgba(212,20,62,0.3); }
+
+  .disclaimer { font-size: 11px; color: #aab0bf; text-align: center; margin-top: 10px; line-height: 1.5; }
+
+  /* SOCIAL PROOF strip */
+  .social-strip {
+    padding: 16px 28px;
+    background: var(--grey-bg);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--grey-border);
+  }
+
+  .social-stat {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--grey-border);
+    padding-right: 18px;
+  }
+  .social-stat:last-child { border-right: none; }
+
+  .stat-num { font-size: 17px; font-weight: 700; color: var(--dark); letter-spacing: -0.03em; }
+  .stat-label { font-size: 11px; color: var(--grey-text); font-weight: 500; }
+
+  /* FULL RESULTS */
+  #full-results { display: none; }
+  #full-results.on { display: block; animation: fadeUp 0.4s ease forwards; opacity: 0; }
+
+  .results-card {
+    background: var(--white);
+    border: 1px solid var(--grey-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .results-top { padding: 40px 28px 28px; text-align: center; border-bottom: 1px solid var(--grey-border); }
+
+  .breakdown-full { padding: 24px 28px; border-bottom: 1px solid var(--grey-border); }
+
+  .insight-box {
+    margin: 0 28px 24px;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 3.5px solid;
+  }
+  .insight-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 7px; letter-spacing: -0.01em; }
+  .insight-box p { font-size: 13.5px; line-height: 1.6; color: #374151; }
+
+  .final-cta-block {
+    background: var(--dark);
+    padding: 36px 28px;
+    text-align: center;
+  }
+  .final-cta-block h3 { font-size: 21px; font-weight: 700; color: white; letter-spacing: -0.02em; margin-bottom: 9px; }
+  .final-cta-block p { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; max-width: 440px; margin: 0 auto 22px; }
+
+  .btn-demo {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 26px;
+    background: var(--razz); color: white;
+    font-size: 14.5px; font-weight: 600; font-family: inherit;
+    border: none; border-radius: 8px; cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .btn-demo:hover { background: var(--razz-hover); box-shadow: 0 5px 18px rgba(212,20,62,0.35); transform: translateY(-1px); }
+
+  .btn-restart { display: block; margin: 14px auto 0; background: none; border: none; font-family: inherit; font-size: 12px; color: rgba(255,255,255,0.3); cursor: pointer; transition: color 0.15s; }
+  .btn-restart:hover { color: rgba(255,255,255,0.65); }
+
+  /* LEVEL COLORS */
+  .c-red .donut-fill { stroke: var(--red); }
+  .c-red .score-big { color: var(--red); }
+  .c-red .level-pill { background: rgba(240,68,56,0.09); color: var(--red); }
+  .c-red .pill-dot { background: var(--red); }
+  .c-red .brow-fill { background: var(--red); }
+  .c-red .insight-box { background: rgba(240,68,56,0.04); border-color: var(--red); }
+
+  .c-orange .donut-fill { stroke: var(--orange); }
+  .c-orange .score-big { color: var(--orange); }
+  .c-orange .level-pill { background: rgba(247,144,9,0.09); color: var(--orange); }
+  .c-orange .pill-dot { background: var(--orange); }
+  .c-orange .brow-fill { background: var(--orange); }
+  .c-orange .insight-box { background: rgba(247,144,9,0.04); border-color: var(--orange); }
+
+  .c-green .donut-fill { stroke: var(--green); }
+  .c-green .score-big { color: var(--green); }
+  .c-green .level-pill { background: rgba(18,183,106,0.09); color: var(--green); }
+  .c-green .pill-dot { background: var(--green); }
+  .c-green .brow-fill { background: var(--green); }
+  .c-green .insight-box { background: rgba(18,183,106,0.04); border-color: var(--green); }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(14px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 32px 14px 70px; }
+    .q-body { padding: 22px 18px; }
+    .resource-strip { margin: 16px 18px 0; }
+    .nav-row { padding: 18px; }
+    .preview-top, .results-top { padding: 32px 18px 22px; }
+    .breakdown-section, .breakdown-full, .gate-section, .social-strip { padding-left: 18px; padding-right: 18px; }
+    .insight-box { margin: 0 18px 20px; }
+    .final-cta-block { padding: 28px 18px; }
+    .progress-bar { padding: 16px 18px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="https://www.siffletdata.com" target="_blank" class="nav-logo"><svg width="97" height="24" viewBox="0 0 97 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M39.0648 13.8059L36.9738 13.3158C35.4312 12.972 35.2558 12.2185 35.2558 11.6845C35.2558 10.7628 36.1038 10.1483 37.3613 10.1483C38.5091 10.1483 39.6058 10.6896 40.6147 11.7576L40.8559 12.0137L42.669 10.0898L42.4497 9.86298C41.0168 8.37066 39.3499 7.61719 37.4929 7.61719C36.1769 7.61719 35.0291 7.99027 34.0641 8.71448C33.0771 9.46063 32.5727 10.4921 32.5727 11.7796C32.5727 13.901 33.9252 15.2982 36.601 15.9346L38.5822 16.3955C40.41 16.8271 40.41 17.7049 40.41 17.9975C40.41 19.5337 38.5603 19.702 37.7634 19.702C36.2647 19.702 35.0364 19.0802 34.0129 17.7927L33.7716 17.4928L31.9805 19.3582L32.1559 19.5849C33.3988 21.2089 35.5628 22.2111 37.7927 22.2111C40.9583 22.2111 43.0931 20.4774 43.0931 17.8878C43.0931 15.8103 41.7332 14.435 39.0648 13.8059Z" fill="#1D2028"/>
+<path d="M48.335 7.92969H45.6592V21.8945H48.335V7.92969Z" fill="#1D2028"/>
+<path d="M60.1858 7.26578V7.93878H55.5141V7.26578C55.5141 5.38576 56.1283 4.72738 57.8683 4.72738H58.9064V2.25483L57.839 2.21825C54.5198 2.21825 52.8383 3.92271 52.8383 7.27309V7.9461H50.667V10.4479H52.8383V21.8963H55.5141V10.4479H60.1858V21.8963H62.8616V10.4479H65.9541V7.93147H62.8616V7.25846C62.8616 5.37844 63.4757 4.72007 65.2157 4.72007H66.2539V2.24751L65.1865 2.21094C61.8673 2.21094 60.1858 3.90808 60.1858 7.26578Z" fill="#1D2028"/>
+<path d="M71.3799 2.21094H68.7041V21.9036H71.3799V2.21094Z" fill="#1D2028"/>
+<path d="M83.9095 8.73592C82.9299 7.98977 81.7163 7.60938 80.2906 7.60938C78.3606 7.60938 76.7814 8.33359 75.6116 9.76737C74.4785 11.15 73.9082 12.9129 73.9082 14.9978C73.9082 17.0973 74.5296 18.8456 75.7579 20.1916C77.0007 21.523 78.6896 22.196 80.7732 22.196C82.9153 22.196 84.7503 21.2962 86.2125 19.5259L86.4172 19.2845L84.5383 17.5508L84.3116 17.8288C83.3101 19.0577 82.1549 19.6576 80.7732 19.6576C78.4337 19.6576 76.9495 18.2823 76.6644 15.8756H86.5196L86.5561 14.6174C86.5634 12.0424 85.6642 10.06 83.9095 8.73592ZM76.7814 13.4177C77.2201 11.3548 78.4995 10.177 80.3418 10.177C82.2207 10.177 83.5294 11.406 83.8218 13.4177H76.7814Z" fill="#1D2028"/>
+<path d="M95.7024 10.4474V7.93099H92.6098V4.21484H89.934V7.93099H87.7627V10.4474H89.934V17.6603C89.934 20.5937 91.2646 21.9543 94.1159 21.9543C94.613 21.9543 95.0809 21.9251 95.388 21.8958L95.6951 21.8739V19.4013L94.306 19.4379C92.9681 19.4379 92.6025 18.9917 92.6025 17.3604V10.4474H95.7024Z" fill="#1D2028"/>
+<path d="M48.3057 2.21094H45.6592V4.85906H48.3057V2.21094Z" fill="#E8154D"/>
+<path d="M11.6196 4.85156C6.86748 4.85156 3 8.72133 3 13.4762C3 18.2312 6.86748 22.1009 11.6196 22.1009C16.3717 22.1009 20.2319 18.2312 20.2319 13.4762V7.8435H11.6196C8.51244 7.8435 5.99017 10.3673 5.99017 13.4762C5.99017 16.5852 8.51244 19.109 11.6196 19.109C14.7267 19.109 17.249 16.5852 17.249 13.4762C17.249 12.5179 17.0077 11.6182 16.5837 10.8281H14.8145C15.414 11.545 15.7722 12.474 15.7722 13.4762C15.7722 15.7659 13.9152 17.6313 11.6196 17.6313C9.33126 17.6313 7.46698 15.7659 7.46698 13.4762C7.46698 11.1866 9.33126 9.32118 11.6196 9.32118H18.755V13.4762C18.755 17.4118 15.5529 20.6159 11.6196 20.6159C7.6863 20.6159 4.48412 17.4118 4.48412 13.4762C4.48412 9.54063 7.6863 6.33656 11.6196 6.33656H25.5981V10.8281H21.7452V12.3058H27.0749V4.85156H11.6196Z" fill="url(#paint0_linear_292_1906)"/>
+<defs>
+<linearGradient id="paint0_linear_292_1906" x1="27.0749" y1="4.85156" x2="0.474526" y2="10.7917" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E8154D"/>
+<stop offset="1" stop-color="#A60F37"/>
+</linearGradient>
+</defs>
+</svg>
+</a>
+  <div class="nav-right">
+    <a href="https://www.siffletdata.com/blog" target="_blank" class="nav-link">Blog</a>
+    <a href="https://www.siffletdata.com/free-trial" target="_blank" class="nav-cta">Try free →</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="badge"><span class="badge-dot"></span>AI Agent Readiness</div>
+    <h1>Is your data stack ready<br>to power AI agents?</h1>
+    <p>Answer 6 questions and get an instant score — discover exactly what's standing between you and reliable, autonomous AI on your data.</p>
+    <div class="trust-row">
+      <span class="trust-item"><svg class="check-icon" width="15" height="15" fill="none" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="7" stroke="#12B76A" stroke-width="1.2"/><path d="M4.5 7.5l2 2 4-4" stroke="#12B76A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>90 sec to complete</span>
+      <span class="trust-item"><svg class="check-icon" width="15" height="15" fill="none" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="7" stroke="#12B76A" stroke-width="1.2"/><path d="M4.5 7.5l2 2 4-4" stroke="#12B76A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Instant score + breakdown</span>
+      <span class="trust-item"><svg class="check-icon" width="15" height="15" fill="none" viewBox="0 0 15 15"><circle cx="7.5" cy="7.5" r="7" stroke="#12B76A" stroke-width="1.2"/><path d="M4.5 7.5l2 2 4-4" stroke="#12B76A" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Personalized recommendations</span>
+    </div>
+  </div>
+
+  <!-- QUIZ CARD -->
+  <div class="card" id="quiz-card">
+    <div class="progress-bar" id="prog-bar">
+      <div class="prog-top">
+        <span class="prog-label" id="prog-label">Question 1 of 8</span>
+        <span class="prog-pct" id="prog-pct">0% complete</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+
+    <!-- Start screen -->
+    <div id="start-screen" class="start-body">
+      <p class="q-text">Before your agents can answer questions, your data needs to be trustworthy.</p>
+      <p class="start-desc">This assessment evaluates your data observability maturity across 8 dimensions — from pipeline monitoring to stakeholder trust. You'll get a score from 0 to 100, a per-dimension breakdown, and clear recommendations.</p>
+      <div class="start-features">
+        <div class="feat-item"><div class="feat-num">6</div><div class="feat-text">Dimensions evaluated</div></div>
+        <div class="feat-item"><div class="feat-num">3</div><div class="feat-text">Readiness levels</div></div>
+        <div class="feat-item"><div class="feat-num">100</div><div class="feat-text">Max score possible</div></div>
+      </div>
+      <div class="nav-row" style="border-top:none;padding:24px 0 0;justify-content:flex-end;">
+        <button class="btn-next on" onclick="renderQ(0)">Start assessment <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><path d="M3 7.5h9M8 4l3.5 3.5L8 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+
+    <div id="q-area" style="display:none;"></div>
+  </div>
+
+  <!-- PREVIEW RESULTS -->
+  <div id="preview-screen">
+    <div class="preview-card">
+
+      <div class="preview-top" id="preview-top">
+        <div class="donut-wrap" id="prev-donut">
+          <svg width="148" height="148" viewBox="0 0 148 148">
+            <circle class="donut-track" cx="74" cy="74" r="61"/>
+            <circle class="donut-fill" id="prev-ring" cx="74" cy="74" r="61" stroke-dasharray="383.3" stroke-dashoffset="383.3"/>
+          </svg>
+          <div class="score-inner">
+            <span class="score-big" id="prev-score">0</span>
+            <span class="score-of">/ 100</span>
+          </div>
+        </div>
+        <div class="level-pill" id="prev-pill"><span class="pill-dot" id="prev-dot"></span><span id="prev-level"></span></div>
+        <p class="preview-headline" id="prev-headline"></p>
+        <p class="preview-sub" id="prev-sub"></p>
+      </div>
+
+      <div class="breakdown-section">
+        <p class="breakdown-title">Score breakdown by dimension</p>
+        <div id="prev-rows"></div>
+        <div class="blur-veil">
+          <span class="lock-hint">
+            <svg width="12" height="12" fill="none" viewBox="0 0 12 12"><rect x="2" y="5" width="8" height="6" rx="1.2" stroke="#9CA3AF" stroke-width="1.1"/><path d="M4 5V3.8a2 2 0 014 0V5" stroke="#9CA3AF" stroke-width="1.1" stroke-linecap="round"/></svg>
+            Full breakdown unlocks below
+          </span>
+        </div>
+      </div>
+
+      <!-- Social proof -->
+      <div class="social-strip">
+        <div class="social-stat"><span class="stat-num">5,000+</span><span class="stat-label">Data practitioners</span></div>
+        <div class="social-stat"><span class="stat-num">10x</span><span class="stat-label">Monitor adoption growth</span></div>
+        <div class="social-stat"><span class="stat-num">BBC, Carrefour, Etam</span><span class="stat-label">Among our customers</span></div>
+      </div>
+
+      <!-- GATE -->
+      <div class="gate-section">
+        <h2 class="gate-head">Unlock your full report</h2>
+        <p class="gate-sub">Get your complete dimension breakdown, top risk factors, and personalized recommendations from Sifflet's data observability team.</p>
+        <div class="form-grid">
+          <div class="field"><label>First name *</label><input id="g-fname" type="text" placeholder="Alex"></div>
+          <div class="field"><label>Last name</label><input id="g-lname" type="text" placeholder="Johnson"></div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Work email *</label><input id="g-email" type="email" placeholder="alex@company.com"></div>
+          <div class="field"><label>Company</label><input id="g-company" type="text" placeholder="Acme Corp"></div>
+        </div>
+        <button class="btn-unlock" onclick="submitGate()">
+          <svg width="15" height="15" fill="none" viewBox="0 0 15 15"><rect x="2.5" y="6.5" width="10" height="7.5" rx="1.5" stroke="white" stroke-width="1.2"/><path d="M5 6.5V5a2.5 2.5 0 015 0v1.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+          Unlock my full report
+        </button>
+        <p class="disclaimer">No spam. Sifflet may follow up based on your score. Unsubscribe anytime.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FULL RESULTS -->
+  <div id="full-results">
+    <div class="results-card">
+      <div class="results-top" id="res-top">
+        <div class="donut-wrap" id="res-donut">
+          <svg width="148" height="148" viewBox="0 0 148 148">
+            <circle class="donut-track" cx="74" cy="74" r="61"/>
+            <circle class="donut-fill" id="res-ring" cx="74" cy="74" r="61" stroke-dasharray="383.3" stroke-dashoffset="383.3"/>
+          </svg>
+          <div class="score-inner">
+            <span class="score-big" id="res-score">0</span>
+            <span class="score-of">/ 100</span>
+          </div>
+        </div>
+        <div class="level-pill" id="res-pill"><span class="pill-dot" id="res-dot"></span><span id="res-level"></span></div>
+        <p class="preview-headline" id="res-headline"></p>
+        <p class="preview-sub" id="res-sub"></p>
+      </div>
+
+      <div class="breakdown-full">
+        <p class="breakdown-title">Full score breakdown</p>
+        <div id="res-rows"></div>
+      </div>
+
+      <div class="insight-box" id="insight-box">
+        <h3 id="insight-title"></h3>
+        <p id="insight-body"></p>
+      </div>
+
+      <div class="final-cta-block">
+        <h3 id="cta-h"></h3>
+        <p id="cta-p"></p>
+        <a href="https://www.siffletdata.com/book-demo" target="_blank" class="btn-demo" id="cta-btn">—</a>
+        <button class="btn-restart" onclick="restart()">← Retake the assessment</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QS = [
+  {
+    cat:"Pipeline monitoring",
+    text:"When a data pipeline fails or produces unexpected results, how does your team typically find out?",
+    opts:[
+      {t:"A business user or stakeholder reports something looks wrong in a dashboard or report",s:0},
+      {t:"We have basic alerting on pipeline failures, but not on data quality or anomalies",s:1},
+      {t:"We monitor pipeline health and receive automated alerts on anomalies",s:2},
+      {t:"End-to-end observability: automated detection, root-cause analysis, and incident routing",s:3}
+    ],
+    resource:{
+      type:"Blog post",
+      title:"How to Build a Data Monitoring Strategy with Metadata",
+      desc:"From surface-level checks to full observability — why metadata is the missing context.",
+      url:"https://www.siffletdata.com/blog/data-monitoring-strategy"
+    }
+  },
+  {
+    cat:"Data definitions",
+    text:"If an AI agent asked \"what is our definition of revenue?\" — where would it find a reliable, up-to-date answer?",
+    opts:[
+      {t:"It wouldn\'t — definitions live in people\'s heads or scattered across Notion pages",s:0},
+      {t:"In a data catalog or wiki, but it\'s not actively maintained",s:1},
+      {t:"In a semantic layer (dbt, LookML), reasonably up-to-date",s:2},
+      {t:"In a versioned, monitored catalog tied directly to actual pipeline outputs",s:3}
+    ],
+    resource:{
+      type:"Blog post",
+      title:"Data Quality Monitoring is Dead. Say Hello to Full Data Stack Observability",
+      desc:"Why testing alone fails — and how the context layer changes everything.",
+      url:"https://www.siffletdata.com/blog/data-quality-monitoring-is-dead-say-hello-to-full-data-stack-observability"
+    }
+  },
+  {
+    cat:"Schema change detection",
+    text:"When an upstream team renames a column or drops a field, how does your data team find out?",
+    opts:[
+      {t:"When something breaks downstream — dashboards go blank, queries fail",s:0},
+      {t:"Through informal communication from the upstream team, if we\'re lucky",s:1},
+      {t:"We have basic schema change detection, but impact analysis is still manual",s:2},
+      {t:"Automated schema change detection with lineage-based downstream impact mapping",s:3}
+    ],
+    resource:{
+      type:"Product",
+      title:"Data Quality Monitoring — Sifflet",
+      desc:"Catch freshness, volume, schema, and distribution issues before they reach the business.",
+      url:"https://www.siffletdata.com/product-monitoring"
+    }
+  },
+  {
+    cat:"Data lineage",
+    text:"If a business user questions a metric, how long does it take to trace it back to raw data?",
+    opts:[
+      {t:"Days — it requires deep investigation and relies on tribal knowledge",s:0},
+      {t:"Hours — we can piece it together but it\'s not formally documented",s:1},
+      {t:"~30 minutes — lineage exists but requires manual navigation",s:2},
+      {t:"Minutes — end-to-end lineage is automated and directly browsable",s:3}
+    ],
+    resource:{
+      type:"Blog post",
+      title:"What is Data Lineage?",
+      desc:"How lineage turns alert fatigue into fast root cause analysis.",
+      url:"https://www.siffletdata.com/blog/data-lineage"
+    }
+  },
+  {
+    cat:"Stakeholder trust",
+    text:"How would you describe business stakeholders\' confidence in your data today?",
+    opts:[
+      {t:"Low — they regularly question numbers and often revert to their own spreadsheets",s:0},
+      {t:"Mixed — trust varies by team and dataset, no consistent baseline",s:1},
+      {t:"Generally good, but data incidents periodically erode confidence",s:2},
+      {t:"High — data quality is treated as a product, with clear ownership and SLAs",s:3}
+    ],
+    resource:{
+      type:"Buyer\'s Guide",
+      title:"The Data Observability Buyer\'s Guide",
+      desc:"If you\'re tired of tools that look great in a demo but don\'t change your day to day.",
+      url:"https://www.siffletdata.com/buyers-guide"
+    }
+  },
+  {
+    cat:"AI readiness",
+    text:"If you deployed a data agent tomorrow, what would be your biggest concern?",
+    opts:[
+      {t:"It would confidently serve wrong or stale data — invisible until a stakeholder finds the mistake",s:0},
+      {t:"Inconsistent results depending on which tables the agent reaches first",s:1},
+      {t:"Occasional errors on edge cases, but core metrics would be reliable",s:2},
+      {t:"Minimal concern — our stack is observable, documented, and trustworthy end-to-end",s:3}
+    ],
+    resource:{
+      type:"Solution page",
+      title:"AI-Ready Reliability — Sifflet",
+      desc:"How Sifflet ensures the data layer underneath your agents is trustworthy at runtime.",
+      url:"https://www.siffletdata.com/solution-by-use-case/ai-ready-reliability"
+    }
+  }
+];
+
+const LEVELS = {
+  fragile:{
+    cls:"c-red",
+    name:"⚠ Fragile",
+    headline:"Your data stack is not ready for AI agents.",
+    sub:"Significant observability gaps mean a deployed agent would confidently produce wrong answers — and your team wouldn\'t catch it until a stakeholder does.",
+    insightTitle:"The real risk: silent failure at scale",
+    insightBody:"Agents don\'t error out on bad data — they return plausible-looking wrong numbers. Every report and downstream process inherits that error. Sifflet closes the visibility gaps before you deploy.",
+    ctaH:"See where your biggest blind spots are.",
+    ctaP:"Our team can walk you through a data health review — no prep required. 30 minutes, real insights on your actual stack.",
+    ctaBtn:"Book a data health review"
+  },
+  monitored:{
+    cls:"c-orange",
+    name:"◎ Monitored",
+    headline:"You have foundations. But gaps will surface at agent scale.",
+    sub:"Your monitoring covers the basics — but data agents will probe corners of your stack you haven\'t watched yet. Partial coverage is a liability at autonomous query volume.",
+    insightTitle:"From \"mostly good\" to agent-proof",
+    insightBody:"The issues you can\'t see today become systematic when an agent runs hundreds of queries daily. Sifflet\'s business-aware observability fills blind spots by connecting technical quality to business context.",
+    ctaH:"Close the remaining gaps before they become incidents.",
+    ctaP:"See how teams at your maturity level move from monitored to fully agent-ready with Sifflet.",
+    ctaBtn:"See Sifflet in action"
+  },
+  ready:{
+    cls:"c-green",
+    name:"✓ Agent-Ready",
+    headline:"Your data stack is in the top tier.",
+    sub:"Strong observability and governance — you\'re ready to deploy data agents with confidence. The question now is how airtight your trust layer really is under pressure.",
+    insightTitle:"Top performers still find blind spots",
+    insightBody:"Even mature stacks benefit from a second opinion. The teams that trust their data most have learned to verify continuously, not just periodically. Sifflet catches the gaps automated rules miss.",
+    ctaH:"You\'re ready. Let\'s verify that together.",
+    ctaP:"See how leading data teams use Sifflet to maintain trust at scale — and what they found after they thought they had it covered.",
+    ctaBtn:"Explore advanced use cases"
+  }
+};
+
+let ans = new Array(6).fill(null);
+let curQ = 0;
+let finalScore = 0;
+let finalLevel = "";
+
+const CIRCUM = 383.3;
+
+function renderQ(idx){
+  curQ = idx;
+  document.getElementById("start-screen").style.display="none";
+  const area = document.getElementById("q-area");
+  area.style.display="block";
+
+  const pct = Math.round((idx/8)*100);
+  document.getElementById("prog-fill").style.width=pct+"%";
+  document.getElementById("prog-label").textContent=`Question ${idx+1} of 6`;
+  document.getElementById("prog-pct").textContent=pct+"% complete";
+
+  const q=QS[idx];
+  area.innerHTML=`<div style="animation:fadeUp 0.3s ease forwards;opacity:0">
+    <div class="q-body">
+      <span class="q-cat">${q.cat}</span>
+      <p class="q-text">${q.text}</p>
+      <div class="options">
+        ${q.opts.map((o,i)=>`<button class="option ${ans[idx]===i?"selected":""}" onclick="pick(${idx},${i},this)">
+          <div class="opt-radio"></div>
+          <span class="opt-text">${o.t}</span>
+        </button>`).join("")}
+      </div>
+    </div>
+    <div class="resource-strip">
+      <div class="resource-icon">
+        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M3 2h7l3 3v9H3V2z" stroke="#D4143E" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2v3h3" stroke="#D4143E" stroke-width="1.3" stroke-linecap="round"/><path d="M5 7h6M5 9.5h4" stroke="#D4143E" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <p class="resource-label">${q.resource.type}</p>
+        <a href="${q.resource.url}" target="_blank" class="resource-title">${q.resource.title}</a>
+        <p class="resource-desc">${q.resource.desc}</p>
+      </div>
+      <a href="${q.resource.url}" target="_blank" class="resource-arrow">Read →</a>
+    </div>
+    <div class="nav-row">
+      <button class="btn-back" onclick="goBack()" ${idx===0?"style=\'visibility:hidden\'":""}>← Back</button>
+      <button class="btn-next ${ans[idx]!==null?"on":""}" id="btn-n" onclick="goNext()">
+        ${idx===5?"Get my score →":"Next question →"}
+      </button>
+    </div>
+  </div>`;
+}
+
+function pick(qi,oi,el){
+  ans[qi]=oi;
+  document.querySelectorAll(".option").forEach(o=>o.classList.remove("selected"));
+  el.classList.add("selected");
+  const b=document.getElementById("btn-n");
+  if(b)b.classList.add("on");
+}
+
+function goNext(){
+  if(ans[curQ]===null)return;
+  if(curQ<5)renderQ(curQ+1);
+  else showPreview();
+}
+
+function goBack(){ if(curQ>0)renderQ(curQ-1); }
+
+function compute(){
+  const total=ans.reduce((s,a,i)=>s+(a!==null?QS[i].opts[a].s:0),0);
+  const pct=Math.round((total/18)*100);
+  finalScore=pct;
+  finalLevel=pct<=33?"fragile":pct<=66?"monitored":"ready";
+}
+
+function buildRows(containerId, animate){
+  const lv=LEVELS[finalLevel];
+  const html=QS.map((q,i)=>{
+    const s=ans[i]!==null?QS[i].opts[ans[i]].s:0;
+    const w=Math.round((s/3)*100);
+    return `<div class="brow">
+      <span class="brow-name">${q.cat}</span>
+      <div class="brow-track"><div class="brow-fill" style="width:${animate?0:w}%" data-w="${w}"></div></div>
+      <span class="brow-score">${s}/3</span>
+    </div>`;
+  }).join("");
+  document.getElementById(containerId).innerHTML=html;
+  if(animate){
+    setTimeout(()=>{
+      document.querySelectorAll(`#${containerId} .brow-fill`).forEach(b=>b.style.width=b.dataset.w+"%");
+    },450);
+  }
+}
+
+function animateRing(ringId, scoreId){
+  const offset=CIRCUM-(finalScore/100)*CIRCUM;
+  setTimeout(()=>{ document.getElementById(ringId).style.strokeDashoffset=offset; },300);
+  let c=0;
+  const el=document.getElementById(scoreId);
+  const t=setInterval(()=>{
+    c+=2; if(c>=finalScore){c=finalScore;clearInterval(t);}
+    el.textContent=c;
+  },16);
+}
+
+function applyLevel(prefix){
+  const lv=LEVELS[finalLevel];
+  const wrap=document.getElementById(prefix+"-top")||document.getElementById(prefix.replace("-","s-")+"top");
+  const donut=document.getElementById(prefix+"-donut")||document.getElementById(prefix+"donut")||document.getElementById("prev-donut")||document.getElementById("res-donut");
+  donut.className=`donut-wrap ${lv.cls}`;
+  document.getElementById(prefix+"-pill").className=`level-pill ${lv.cls}`;
+  document.getElementById(prefix+"-dot").className=`pill-dot ${lv.cls.replace("c-","pill-")}`;
+  document.getElementById(prefix+"-level").textContent=lv.name;
+  document.getElementById(prefix+"-headline").textContent=lv.headline;
+  document.getElementById(prefix+"-sub").textContent=lv.sub;
+}
+
+function showPreview(){
+  compute();
+  document.getElementById("quiz-card").style.display="none";
+  const lv=LEVELS[finalLevel];
+
+  // Apply level to preview
+  document.getElementById("prev-donut").className=`donut-wrap ${lv.cls}`;
+  document.getElementById("prev-pill").className=`level-pill`;
+  document.getElementById("prev-pill").style.cssText=``;
+  document.getElementById("prev-pill").className=`level-pill ${lv.cls.replace("c-","").length>0?lv.cls:""}`;
+  document.getElementById("prev-dot").className=`pill-dot`;
+
+  // manually apply colors via class on parent
+  document.getElementById("prev-donut").closest(".preview-card")||document.querySelector(".preview-top");
+
+  // simpler approach - apply class to a wrapper
+  document.getElementById("preview-screen").className="on "+lv.cls;
+  document.getElementById("prev-level").textContent=lv.name;
+  document.getElementById("prev-headline").textContent=lv.headline;
+  document.getElementById("prev-sub").textContent=lv.sub;
+
+  buildRows("prev-rows",true);
+  animateRing("prev-ring","prev-score");
+
+  document.getElementById("preview-screen").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function submitGate(){
+  const email=document.getElementById("g-email").value.trim();
+  const fname=document.getElementById("g-fname").value.trim();
+  if(!fname||!email){alert("Please enter your first name and work email.");return;}
+  if(!email.includes("@")){alert("Please enter a valid work email.");return;}
+
+  fetch("https://api.hsforms.com/submissions/v3/integration/submit/24383351/YOUR_FORM_GUID",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      fields:[
+        {name:"email",value:email},
+        {name:"firstname",value:fname},
+        {name:"lastname",value:document.getElementById("g-lname").value},
+        {name:"company",value:document.getElementById("g-company").value},
+        {name:"ai_readiness_score",value:String(finalScore)},
+        {name:"ai_readiness_level",value:finalLevel}
+      ],
+      context:{pageUri:window.location.href,pageName:"AI Agent Readiness Assessment"}
+    })
+  }).catch(()=>{});
+
+  showFull();
+}
+
+function showFull(){
+  document.getElementById("preview-screen").style.display="none";
+  const lv=LEVELS[finalLevel];
+
+  document.getElementById("full-results").className="on "+lv.cls;
+  document.getElementById("res-donut").className=`donut-wrap ${lv.cls}`;
+  document.getElementById("res-pill").className=`level-pill`;
+  document.getElementById("res-level").textContent=lv.name;
+  document.getElementById("res-headline").textContent=lv.headline;
+  document.getElementById("res-sub").textContent=lv.sub;
+
+  buildRows("res-rows",true);
+  animateRing("res-ring","res-score");
+
+  document.getElementById("insight-box").className=`insight-box ${lv.cls==="c-red"?"c-red":lv.cls==="c-orange"?"c-orange":"c-green"}`;
+  document.getElementById("insight-title").textContent=lv.insightTitle;
+  document.getElementById("insight-body").textContent=lv.insightBody;
+  document.getElementById("cta-h").textContent=lv.ctaH;
+  document.getElementById("cta-p").textContent=lv.ctaP;
+  document.getElementById("cta-btn").textContent=lv.ctaBtn+" →";
+
+  document.getElementById("full-results").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function restart(){
+  ans=new Array(6).fill(null);
+  curQ=0; finalScore=0; finalLevel="";
+  document.getElementById("full-results").style.display="none";
+  document.getElementById("full-results").className="";
+  document.getElementById("preview-screen").style.display="none";
+  document.getElementById("quiz-card").style.display="block";
+  document.getElementById("start-screen").style.display="block";
+  document.getElementById("q-area").style.display="none";
+  document.getElementById("prog-fill").style.width="0%";
+  document.getElementById("prog-label").textContent="Question 1 of 8";
+  document.getElementById("prog-pct").textContent="0% complete";
+}
+</script>
+</body>
+</html>
