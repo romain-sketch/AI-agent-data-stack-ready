@@ -1062,7 +1062,7 @@ function submitGate(){
   if(!fname||!email){alert("Please enter your first name and work email.");return;}
   if(!email.includes("@")){alert("Please enter a valid work email.");return;}
 
-  fetch("https://api.hsforms.com/submissions/v3/integration/submit/24383351/YOUR_FORM_GUID",{
+  fetch("https://api.hsforms.com/submissions/v3/integration/submit/24383351/5eb31231-5db1-4db0-b1bc-0266dfee60e8",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
